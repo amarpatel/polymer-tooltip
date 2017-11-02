@@ -1,0 +1,131 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-ajax/iron-ajax.html">
+<dom-module id="ajax-element">
+
+  <template>
+    <style>
+      :host {
+        display: inline-block;
+      }
+      .name {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-decoration-color: red;
+      }
+      .tooltip {
+        background-color: white;
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        text-align: center;
+        width: 20em;
+        height: 5em;
+        border: 1px solid black;
+        overflow: hidden;
+        font-size: 1rem;
+        padding: 2em;
+      }
+
+      .tooltip .title,
+      .tooltip .response,
+      .tooltip .notice {
+        font-size: 0.75rem;
+        margin: 0;
+      }
+
+      .tooltip .title {
+        color: blue;
+      }
+
+      .tooltip .response {
+        color: orange;
+      }
+
+      .tooltip .notice {
+        margin: 0;
+      }
+    </style>
+
+    
+
+    <!-- This is the wrapper for the `name` attribute -->
+    <span class="name" on-mouseover='onHover' on-mouseout='onUnhover'>[[name]]</span>
+
+    <!-- This is what happens when it's hovering  -->
+    <template is="dom-if" if="[[isHovering]]">
+      
+      <!-- Show this if there's a stored response  -->
+      <template is="dom-if" if="[[storedResponse]]">
+        <div class="tooltip">
+          <h4 class="title">ID [[id]] is [[type]] [[name]]</h4>
+          <p class="response">API Response: [[storedResponse]]</p>
+          <p class="notice">This tooltip only makes a request the first time. (see console)</p>
+        </div>
+      </template>
+
+      <!-- If there isn't a stored response, make an AJAX request  -->
+      <template is="dom-if" if="[[!storedResponse]]">
+        <iron-ajax 
+          auto
+          url="https://jsonplaceholder.typicode.com/posts/[[id]]"
+          handle-as="json"
+          last-response="[[response]]"
+          on-response="onResponse"
+          id="xhr"></iron-ajax>
+      </template>
+    </template>
+  </template>
+
+  <script>
+    class AjaxElement extends Polymer.Element {
+      static get is() { return 'ajax-element'; }
+      static get properties() {
+        return {
+          name: {
+            type: String
+          },
+          storedResponse: {
+            type: Object,
+            value: false,
+            readOnly: false,
+            notify: false
+          },
+          isHovering: {
+            type: Boolean,
+            value: false,
+            notify: true,
+            readOnly: true
+          },
+          id: {
+            type: String
+          },
+          type: {
+            type: String
+          }
+        }
+      }
+      constructor() {
+        super();
+      }
+
+      // Handles response from AJAX call
+      onResponse(e) {
+        console.log('Retrieved from API');
+        const { response } = e.detail;
+        this.storedResponse = JSON.stringify(response);
+      }
+      
+      // since `isHovering` is `readOnly`, its value is set by the `this._set[property name]` function
+      onHover(e) {
+        this._setIsHovering(true);
+      }
+      onUnhover(e) {
+        this._setIsHovering(false);
+      }
+    }
+    customElements.define(AjaxElement.is, AjaxElement);
+  </script>
+
+</dom-module>
+
